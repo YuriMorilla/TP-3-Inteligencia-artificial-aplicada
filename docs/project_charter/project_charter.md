@@ -1,8 +1,15 @@
 # Project Charter — EduAcesso ESG
 
-**Versão:** 1.0  
-**Data:** 2026-08-24  
+**Versão:** 2.0  
+**Data:** 2026-09-20  
 **Metodologia:** TDSP + CRISP-DM  
+
+> Changelog v2: ambiente de desenvolvimento configurado (branch `tp2`,
+> `requirements.txt` ampliado); interface Streamlit evoluída para abas
+> dinâmicas com cache e estado de sessão; nova fonte de dados via
+> Beautiful Soup (Wikipédia + Google News RSS); serviço de upload/download
+> de CSV adicionado. Seções 1–4 e 6 mantidas da v1; seções 5, 7 e 8
+> atualizadas para refletir o escopo do TP2.
 
 ---
 
@@ -51,7 +58,10 @@ O Brasil apresenta profundas desigualdades no acesso à educação de qualidade,
 
 **Incluído:**
 - Coleta automatizada via APIs do INEP (Censo Escolar) e IBGE (SIDRA)
-- Dashboard Streamlit com filtros por estado, município e ano
+- Coleta de conteúdo web via Beautiful Soup (Wikipédia e Google News RSS) para nuvem de palavras e tabela de notícias
+- Dashboard Streamlit com filtros dinâmicos (UF, faixa de IDEB) por estado, município e ano
+- Cache (`st.cache_data`/`st.cache_resource`) e estado de sessão (`st.session_state`) para performance e persistência
+- Serviço de upload (CSV) e download (CSV) de dados diretamente na interface
 - Score ESG-educação composto por múltiplos indicadores
 - Geração de análise textual via LLM (TP futuro)
 
@@ -76,10 +86,15 @@ O Brasil apresenta profundas desigualdades no acesso à educação de qualidade,
 | TDSP | CRISP-DM | Entregável |
 |------|----------|-----------|
 | Business Understanding | Business Understanding | Este Project Charter |
-| Data Acquisition | Data Understanding | Data Summary Report v1 |
-| Modeling | Modeling | Score ESG + análise LLM |
-| Deployment | Evaluation + Deployment | App Streamlit publicado |
+| Data Acquisition | Data Understanding | Data Summary Report v1 e v2 |
+| Modeling | Modeling | Score ESG + análise LLM (TP3) |
+| Deployment | Evaluation + Deployment | App Streamlit publicado (Community Cloud) |
 | Acceptance | — | Relatório final + documentação |
+
+**Progresso no TP2:** ambiente de desenvolvimento e Git configurados;
+interface interativa (filtros, abas, upload/download) implementada;
+coleta de conteúdo web (Beautiful Soup) integrada como segunda fonte de
+dados; cache e estado de sessão implementados para performance.
 
 ---
 
@@ -90,3 +105,5 @@ O Brasil apresenta profundas desigualdades no acesso à educação de qualidade,
 | API do INEP indisponível | Média | Cache local em CSV + dados do repositório oficial |
 | Dados municipais incompletos | Alta | Imputação estatística + flag de qualidade |
 | Escopo crescente | Média | Foco no MVP para TP1; features avançadas em TPs futuros |
+| Mudança de layout do site coletado (Wikipédia/Google News) | Baixa-Média | Arquivos de amostra em `data/raw/*_sample.*` garantem funcionamento do app mesmo se o scraper falhar |
+| Upload de CSV com schema inválido | Média | Validação de colunas obrigatórias antes de mesclar os dados |
