@@ -46,10 +46,12 @@ NEWS_QUERY = "educação municípios Brasil"
 
 
 def scrape_wikipedia_text(urls: list[str] = WIKI_URLS, delay: float = 1.0) -> str:
-    """Extrai o texto dos parágrafos principais de páginas da Wikipédia.
+    """Extrai o texto dos parágrafos de páginas da Wikipédia.
 
-    Usa apenas os <p> de primeiro nível dentro de div.mw-parser-output,
-    o que evita capturar legendas de infobox, referências e notas.
+    Pega todos os <p> dentro de div.mw-parser-output, exceto os que estão
+    dentro de tabelas (infobox), evitando depender de estarem no primeiro
+    nível — o HTML real da Wikipédia varia mais do que o de um exemplo
+    simplificado.
     """
     all_text = []
     for url in urls:
@@ -60,16 +62,19 @@ def scrape_wikipedia_text(urls: list[str] = WIKI_URLS, delay: float = 1.0) -> st
             print(f"[aviso] Falha ao acessar {url}: {exc}")
             continue
 
+        resp.encoding = resp.apparent_encoding or resp.encoding
         soup = BeautifulSoup(resp.text, "html.parser")
         content = soup.select_one("div.mw-parser-output")
         if not content:
-            print(f"[aviso] Estrutura inesperada em {url}")
+            print(f"[aviso] Estrutura inesperada em {url} (status {resp.status_code}, {len(resp.text)} bytes)")
             continue
 
-        paragraphs = content.find_all("p", recursive=False)
+        paragraphs = [p for p in content.find_all("p") if not p.find_parent("table")]
         text = " ".join(p.get_text(" ", strip=True) for p in paragraphs)
         text = re.sub(r"\[\d+\]", "", text)  # remove marcadores de referência [1], [2]...
         text = re.sub(r"\s+", " ", text).strip()
+
+        print(f"  {url} -> {len(paragraphs)} parágrafo(s), {len(text)} caractere(s)")
         if text:
             all_text.append(text)
         time.sleep(delay)  # cortesia com o servidor entre requisições
