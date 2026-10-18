@@ -7,3 +7,4 @@ data/raw/*
 !data/raw/.gitkeep
 !data/raw/*_sample.txt
 !data/raw/*_sample.csv
+data/processed/municipios_api.csv

@@ -1,9 +1,16 @@
 # Project Charter — EduAcesso ESG
 
-**Versão:** 2.0  
-**Data:** 2026-09-20  
+**Versão:** 3.0  
+**Data:** 2026-10-18  
 **Metodologia:** TDSP + CRISP-DM  
 
+> Changelog v3: app Streamlit reorganizado em múltiplas páginas com menu de
+> navegação (`st.navigation`); API FastAPI com 6 rotas (GET/POST) documentada
+> em `docs/api/`; avaliação formal do Selenium (não adotado, ver seção 9);
+> corpus unificado e templates de prompt preparados para as tarefas de LLM do
+> TP4; testes automatizados (pytest). Problema de negócio reavaliado (seção 1.1).
+> Seções 5, 7, 8 atualizadas e seção 9 (decisões técnicas) adicionada.
+>
 > Changelog v2: ambiente de desenvolvimento configurado (branch `tp2`,
 > `requirements.txt` ampliado); interface Streamlit evoluída para abas
 > dinâmicas com cache e estado de sessão; nova fonte de dados via
@@ -18,6 +25,16 @@
 O Brasil apresenta profundas desigualdades no acesso à educação de qualidade, especialmente em municípios de pequeno porte e regiões periféricas. Estudantes de baixa renda enfrentam barreiras como ausência de internet, falta de dispositivos e escassez de conteúdo adequado. Dados do IBGE (2023) apontam que mais de 4 milhões de crianças e adolescentes estão fora da escola.
 
 **Problema central:** Ausência de uma ferramenta analítica integrada que permita monitorar indicadores educacionais municipais com foco em equidade, subsidiando decisões de gestores públicos, ONGs e pesquisadores.
+
+### 1.1 Reavaliação do problema de negócio (TP3)
+
+Com a API e o corpus preparado, o problema deixa de ser só "visualizar indicadores"
+e passa a incluir **integrar os dados a outros sistemas** (a API permite que
+secretarias, ONGs ou outros painéis consultem e enviem registros) e **gerar
+interpretação textual** sobre eles (LLM, TP4). A meta 3 (insights via LLM)
+permanece, agora com base de dados e prompts definidos. Nenhum objetivo foi
+removido; a meta 1 (cobertura ≥ 90% dos municípios) segue dependente da coleta
+completa via INEP/SIDRA, hoje representada por uma amostra de 15 municípios.
 
 ---
 
@@ -62,8 +79,11 @@ O Brasil apresenta profundas desigualdades no acesso à educação de qualidade,
 - Dashboard Streamlit com filtros dinâmicos (UF, faixa de IDEB) por estado, município e ano
 - Cache (`st.cache_data`/`st.cache_resource`) e estado de sessão (`st.session_state`) para performance e persistência
 - Serviço de upload (CSV) e download (CSV) de dados diretamente na interface
+- Aplicação Streamlit multipágina (Início, Indicadores, Notícias, Upload/Download, API, Preparação para LLM)
+- API FastAPI (`api/main.py`) com consulta (GET) e envio (POST) de dados, documentada em `docs/api/`
+- Corpus unificado (`data/processed/corpus_llm.*`) e templates de prompt (`src/llm/prompts.py`) para resumo, sentimento, Q&A e geração de texto
 - Score ESG-educação composto por múltiplos indicadores
-- Geração de análise textual via LLM (TP futuro)
+- Execução das tarefas de LLM (TP4; em TP3 apenas a preparação)
 
 **Excluído:**
 - Dados privados de escolas particulares
@@ -86,8 +106,8 @@ O Brasil apresenta profundas desigualdades no acesso à educação de qualidade,
 | TDSP | CRISP-DM | Entregável |
 |------|----------|-----------|
 | Business Understanding | Business Understanding | Este Project Charter |
-| Data Acquisition | Data Understanding | Data Summary Report v1 e v2 |
-| Modeling | Modeling | Score ESG + análise LLM (TP3) |
+| Data Acquisition | Data Understanding | Data Summary Report v1, v2 e v3 |
+| Modeling | Modeling | Score ESG + análise LLM (TP4) |
 | Deployment | Evaluation + Deployment | App Streamlit publicado (Community Cloud) |
 | Acceptance | — | Relatório final + documentação |
 
@@ -95,6 +115,9 @@ O Brasil apresenta profundas desigualdades no acesso à educação de qualidade,
 interface interativa (filtros, abas, upload/download) implementada;
 coleta de conteúdo web (Beautiful Soup) integrada como segunda fonte de
 dados; cache e estado de sessão implementados para performance.
+
+**Progresso no TP3:** app multipágina; API FastAPI com testes; corpus e prompts
+para LLM; documentação revisada (Charter v3, Data Summary v3, `docs/api/`).
 
 ---
 
@@ -107,3 +130,18 @@ dados; cache e estado de sessão implementados para performance.
 | Escopo crescente | Média | Foco no MVP para TP1; features avançadas em TPs futuros |
 | Mudança de layout do site coletado (Wikipédia/Google News) | Baixa-Média | Arquivos de amostra em `data/raw/*_sample.*` garantem funcionamento do app mesmo se o scraper falhar |
 | Upload de CSV com schema inválido | Média | Validação de colunas obrigatórias antes de mesclar os dados |
+| API não disponível no deploy do Streamlit Community Cloud | Alta | A página "API FastAPI" informa quando a API está fora do ar; o dashboard lê os mesmos dados direto de `src/data/store.py`, sem depender da API em execução |
+| Custo/limites de LLM na próxima etapa | Média | Corpus pequeno e fragmentado em trechos curtos; recuperação de contexto antes do prompt reduz tokens |
+| Respostas de LLM sem lastro nos dados (alucinação) | Média | Prompt de Q&A restringe a resposta ao contexto e exige "Não sei" quando ausente |
+
+---
+
+## 9. Decisões técnicas (TP3)
+
+| Decisão | Justificativa |
+|---|---|
+| **Selenium não adotado** | Todas as fontes atuais (Wikipédia, Google News RSS, amostra IDEB) são estáticas e atendidas por `requests` + Beautiful Soup. Selenium exige navegador/driver, torna o deploy mais frágil e é mais lento. Será reavaliado se uma fonte de dados passar a depender de JavaScript (ex.: portais com filtros dinâmicos do INEP). |
+| `st.navigation` em vez de pasta `pages/` | Menu agrupado por seção, controle explícito de ordem e ícones, entrada única (`app/main.py`) |
+| Camada de dados única (`src/data/store.py`) | Streamlit, API e scripts compartilham a mesma lógica sem depender de Streamlit/FastAPI, o que simplifica testes |
+| Persistência em CSV para o POST | Suficiente para o escopo acadêmico e coerente com o requisito de dados em `data/`; migrar para banco se houver uso concorrente |
+| Corpus com 3 tipos de documento (texto, notícia, indicador) | Cobre as 4 tarefas de LLM previstas: resumo, sentimento, Q&A e geração |
